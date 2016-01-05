@@ -12,6 +12,12 @@ DEFAULT_SETPOINT = 21
 # Minimum duration between heater on/off cycle (seconds)
 MIN_DURATION = 30
 
+# Temperature hysteresis value - temp will be kept at +/- this
+TEMP_HYST = 0.5
+
+# Switch from high to low when temperature is within this value of setpoint
+HIGHLOW_THRESH = 1.5
+
 # Heater GPIO pin for HIGH element
 GPIO_HIGH = 6
 
@@ -70,7 +76,7 @@ class Heater(object):
         self.setstate("low")
 
     def off(self):
-        """Tuen off heater"""
+        """Turn off heater"""
         self.setstate("off")
 
 
@@ -90,46 +96,58 @@ def gettemp(sensorlist):
         temperature = -999
     return temperature
 
-wiringpi2.wiringPiSetupGpio()
 
-sensors = []
-for sid in sensorids:
-    sensor = w1therm.OWTemp(sid)
-    sensors.append(sensor)
+def setup():
+    """Configure hardware"""
+    wiringpi2.wiringPiSetupGpio()
 
-if len(sensors) == 0:
-    print "No temperature sensors defined"
-    exit(1)
 
-setpoint = DEFAULT_SETPOINT
-heater = Heater(GPIO_LOW, GPIO_HIGH)
+def main():
+    """ Main loop"""
+    sensors = []
+    for sid in sensorids:
+        sensor = w1therm.OWTemp(sid)
+        sensors.append(sensor)
 
-lastcheck = time.time()
-while True:
-    templist = []
-    for a in range(0, 9):
-        gt = gettemp(sensors)
-        if gt != -999:
-            templist.append(gettemp(sensors))
-            time.sleep(1)
-    if len(templist) == 0:
-        print "Error getting temperature for all attempts"
-        heater.off()
-        time.sleep(MIN_DURATION)
-        continue
-    templist.sort()
-    temp = templist[len(templist)/2]
-    print "Temperatures: ", templist
-    print "Average temperature: %f" % temp
+    if len(sensors) == 0:
+        print "No temperature sensors defined"
+        exit(1)
 
-    if temp < setpoint and not heater.is_on():
-        if (setpoint - temp) > 1:
-            heater.high()
-        else:
-            heater.low()
-    elif temp > setpoint and heater.is_on():
-        heater.off()
+    setpoint = DEFAULT_SETPOINT
+    temphyst = TEMP_HYST
+    hilowthresh = HIGHLOW_THRESH
+    heater = Heater(GPIO_LOW, GPIO_HIGH)
 
-    delay = time.time() - (lastcheck + MIN_DURATION)
-    if delay > 0:
-        time.sleep(delay)
+    lastcheck = time.time()
+    while True:
+        templist = []
+        for a in range(0, 9):  # pylint: disable=unused-variable
+            gt = gettemp(sensors)
+            if gt != -999:
+                templist.append(gettemp(sensors))
+                time.sleep(1)
+        if len(templist) == 0:
+            print "Error getting temperature for all attempts"
+            heater.off()
+            time.sleep(MIN_DURATION)
+            continue
+        templist.sort()
+        temp = templist[len(templist)/2]
+        print "Temperatures: ", templist
+        print "Average temperature: %f" % temp
+
+        if temp < (setpoint - temphyst) and not heater.is_on():
+            if (setpoint - temp) > hilowthresh:
+                heater.high()
+            else:
+                heater.low()
+        elif temp > (setpoint + temphyst) and heater.is_on():
+            heater.off()
+
+        delay = time.time() - (lastcheck + MIN_DURATION)
+        if delay > 0:
+            time.sleep(delay)
+
+if __name__ == "__main__":
+    setup()
+    main()
