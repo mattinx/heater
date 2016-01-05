@@ -1,18 +1,20 @@
 #!/usr/bin/python
 """1-wire Temperature Sensor support"""
 
+import random
 import time
 
 
 class OWTemp(object):
     """Represents a 1-wire temperature sensor and access"""
-    def __init__(self, sensorid):
+    def __init__(self, sensorid, dummy=False):
         self.__sensorid = sensorid
         self.__path = '/sys/bus/w1/devices/%s/w1_slave' % sensorid
         self.__lastcheck = 0.0
         self.__temp = 999.99
         self.__defaultunit = 'C'
         self.__registers = [0, 0, 0, 0, 0, 255, 0, 16, 0]
+        self.__dummy = dummy
 
     def get_raw(self):
         """Get raw data from 1-wire data file"""
@@ -26,6 +28,9 @@ class OWTemp(object):
 
     def update(self):
         """Update temperature"""
+        if self.__dummy:
+            self.__temp = 18 + (random.random() * 5)
+            return True
         lines = None
         retries = 10
         success = False
