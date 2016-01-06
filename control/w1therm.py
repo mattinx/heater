@@ -29,7 +29,7 @@ class OWTemp(object):
     def update(self):
         """Update temperature"""
         if self.__dummy:
-            self.__temp = 18 + (random.random() * 5)
+            self.__temp = 16 + (random.random() * 10)
             return True
         lines = None
         retries = 10
@@ -40,21 +40,25 @@ class OWTemp(object):
                 return False
             lines = self.get_raw()
             if lines is None or len(lines) < 2:
+                print "Output too short"
                 time.sleep(0.2)
                 continue
             if lines[0].split()[-1] != 'YES':
+                print "Bad CRC"
                 time.sleep(0.2)
                 continue
             regs = []
             for reg in lines[1].split()[0:9]:
                 regs.append(int(reg, 16))
             t = lines[1].split('=')
-            if t is None or len(t) > 1:
+            if t is None or len(t) > 2:
+                print "Unable to split out temp"
                 time.sleep(0.2)
                 continue
             success = True
         self.__registers = regs
         self.__temp = float(t[1]) / 1000.00
+        #print "Temperature: %f" % self.__temp
         return True
 
     def getid(self):

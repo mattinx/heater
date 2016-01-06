@@ -7,10 +7,10 @@ import w1therm
 
 
 # Default setpoint (in C) in event nothing exists in the control file
-DEFAULT_SETPOINT = 21
+DEFAULT_SETPOINT = 25.0
 
 # Minimum duration between heater on/off cycle (seconds)
-MIN_DURATION = 30
+MIN_DURATION = 15
 
 # Temperature hysteresis value - temp will be kept at +/- this
 TEMP_HYST = 0.5
@@ -19,13 +19,13 @@ TEMP_HYST = 0.5
 HIGHLOW_THRESH = 1.5
 
 # Heater GPIO pin for HIGH element
-GPIO_HIGH = 6
+GPIO_HIGH = 5
 
 # Heater GPIO pin for LOW element and FAN
-GPIO_LOW = 6
+GPIO_LOW = 4
 
 # ID of sensors
-sensorids = ['28-000005e2fdc3']
+sensorids = ['28-000006db9c2a']
 
 
 class Heater(object):
@@ -35,7 +35,6 @@ class Heater(object):
         self.__highpin = highpin
         wiringpi2.pinMode(lowpin, 1)
         wiringpi2.pinMode(highpin, 1)
-        self.__state = 'off'
         self.setstate('off')
 
     def getstate(self):
@@ -52,11 +51,11 @@ class Heater(object):
             self.__state = 'off'
         elif s == "1" or s == "lo" or s == "low":
             wiringpi2.digitalWrite(self.__highpin, 0)
-            wiringpi2.digitalWrite(self.__lowpin, 0)
+            wiringpi2.digitalWrite(self.__lowpin, 1)
             self.__state = 'low'
         elif s == "2" or s == "hi" or s == "high" or s == "on":
-            wiringpi2.digitalWrite(self.__highpin, 0)
-            wiringpi2.digitalWrite(self.__lowpin, 0)
+            wiringpi2.digitalWrite(self.__highpin, 1)
+            wiringpi2.digitalWrite(self.__lowpin, 1)
             self.__state = 'high'
         return
 
@@ -99,7 +98,7 @@ def gettemp(sensorlist):
 
 def setup():
     """Configure hardware"""
-    wiringpi2.wiringPiSetupGpio()
+    wiringpi2.wiringPiSetup()
 
 
 def main():
@@ -118,35 +117,43 @@ def main():
     hilowthresh = HIGHLOW_THRESH
     heater = Heater(GPIO_LOW, GPIO_HIGH)
 
-    lastcheck = time.time()
-    while True:
-        templist = []
-        for a in range(0, 9):  # pylint: disable=unused-variable
-            gt = gettemp(sensors)
-            if gt != -999:
-                templist.append(gettemp(sensors))
-                time.sleep(1)
-        if len(templist) == 0:
-            print "Error getting temperature for all attempts"
-            heater.off()
-            time.sleep(MIN_DURATION)
-            continue
-        templist.sort()
-        temp = templist[len(templist)/2]
-        print "Temperatures: ", templist
-        print "Average temperature: %f" % temp
+    print "Target temperature: %fC" % setpoint
 
-        if temp < (setpoint - temphyst) and not heater.is_on():
-            if (setpoint - temp) > hilowthresh:
-                heater.high()
-            else:
-                heater.low()
-        elif temp > (setpoint + temphyst) and heater.is_on():
-            heater.off()
+    try:
+        while True:
+            startcheck = time.time()
+            templist = []
+            for a in range(0, 9):  # pylint: disable=unused-variable
+                gt = gettemp(sensors)
+                if gt != -999:
+                    templist.append(gettemp(sensors))
+                    time.sleep(1)
+            if len(templist) == 0:
+                print "Error getting temperature for all attempts"
+                heater.off()
+                time.sleep(MIN_DURATION)
+                continue
+            print "Temperatures: ", templist
+            templist.sort()
+            temp = templist[len(templist)/2]
+            print "Median temperature: %f" % temp
 
-        delay = time.time() - (lastcheck + MIN_DURATION)
-        if delay > 0:
-            time.sleep(delay)
+            if temp < (setpoint - temphyst) and not heater.is_on():
+                if (setpoint - temp) > hilowthresh:
+                    heater.high()
+                else:
+                    heater.low()
+            elif temp > (setpoint + temphyst) and heater.is_on():
+                heater.off()
+
+            delay = time.time() - (startcheck + MIN_DURATION)
+            if delay > 0:
+                print "Next check in %d seconds" % (delay)
+                time.sleep(delay)
+    except:
+        raise
+    finally:
+        heater.off()
 
 if __name__ == "__main__":
     setup()
