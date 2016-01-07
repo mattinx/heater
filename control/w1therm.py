@@ -58,7 +58,7 @@ class OWTemp(object):
             success = True
         self.__registers = regs
         self.__temp = float(t[1]) / 1000.00
-        #print "Temperature: %f" % self.__temp
+        # print "Temperature: %f" % self.__temp
         return True
 
     def getid(self):
