@@ -2,6 +2,7 @@
 """Heater control main application"""
 # pylint: disable=line-too-long
 
+import grp
 import json
 import os
 import sys
@@ -51,13 +52,17 @@ GPIO_HIGH = 5
 GPIO_LOW = 4
 
 # ID of sensors
-sensorids = ['28-000006db9c2a']
+SENSOR_IDS = ['28-000006db9c2a']
 
 # Path to status file
 STATUS_FILE = '/dev/shm/heater-status'
 
 # Path to control file
 CONTROL_FILE = '/dev/shm/heater-control'
+
+# Group and permissions for the control file
+CONTROL_GROUP = 'www-data'
+CONTROL_PERMS = 0666
 
 # Minimum temperature for setpoint
 TEMP_MIN = 0
@@ -147,7 +152,7 @@ def getmediantemp(sensors, attempts):
     Query every sensor in sensors attempts times
     Return the median temperature
     """
-    print "Begin temperature check"
+    # print "Begin temperature check"
     templist = []
     for a in range(0, attempts):  # pylint: disable=unused-variable
         gt = gettemp(sensors)
@@ -173,6 +178,7 @@ def writestate(heater, temp):
         state['temperature'] = temp
     state['run'] = settings['run']
     state['heater'] = heater.getstate()
+    state['setpoint'] = settings['setpoint']
     try:
         fd = open(STATUS_FILE, "w")
         json.dump(state, fd)
@@ -203,6 +209,10 @@ def updatesettings():
         print "Error reading control file"
         writesettings()
         return
+    except ValueError:
+        print "Error parsing json from control file"
+        writesettings()
+        return
     try:
         setpoint = float(newsettings['setpoint'])
         minduration = int(newsettings['minduration'])
@@ -212,6 +222,7 @@ def updatesettings():
         elements = str(newsettings['elements']).lower()
     except ValueError:
         print "Error parsing control file"
+        writesettings()
         return
 
     needwrite = False
@@ -236,11 +247,11 @@ def updatesettings():
         highlowthresh = 0
         needwrite = True
     if(run not in ['off', 'cont', 'auto']):
-        print "Invalud run state: %s: Setting to off" % (run)
+        print "Invalid run state: %s: Setting to off" % (run)
         run = 'off'
         needwrite = True
     if(elements not in ['auto', 'high', 'low']):
-        print "Invalud elements state: %s: Setting to auto" % (elements)
+        print "Invalid elements state: %s: Setting to auto" % (elements)
         elements = 'auto'
         needwrite = True
 
@@ -265,6 +276,16 @@ def setup():
         if not os.access(CONTROL_FILE, os.F_OK):
             fd = open(CONTROL_FILE, "w")
             fd.close()
+            uid = os.stat(CONTROL_FILE).st_uid
+            if type(CONTROL_GROUP) is int:
+                gid = CONTROL_GROUP
+            else:
+                try:
+                    gid = grp.getgrnam(CONTROL_GROUP).gr_gid
+                except KeyError:
+                    gid = os.stat(CONTROL_FILE).st_gid
+            os.chown(CONTROL_FILE, uid, gid)
+            os.chmod(CONTROL_FILE, CONTROL_PERMS)
     except IOError:
         print "Error accessing control file: %s" % CONTROL_FILE
         sys.exit(1)
@@ -283,7 +304,7 @@ def main():
     setup()
 
     sensors = []
-    for sid in sensorids:
+    for sid in SENSOR_IDS:
         sensor = w1therm.OWTemp(sid)
         sensors.append(sensor)
 
@@ -328,20 +349,22 @@ def main():
                     time.sleep(1)
                     continue
 
-                if (temp < (setpoint - temphyst)) and not heater.is_on():
+                if (temp < (setpoint - temphyst)):
                     if (settings['elements'] == 'high') or (
                             (settings['elements'] == "auto") and (
                                 (setpoint - temp) > settings['highlowthresh']
                                 )):
-                        heater.high()
+                        if heater.getstate() != "high":
+                            heater.high()
                     else:
-                        heater.low()
+                        if heater.getstate() != "low":
+                            heater.low()
                 elif (temp > (setpoint + temphyst)) and heater.is_on():
                     heater.off()
 
             writestate(heater, temp)
 
-            print "Check took %d seconds" % (time.time() - startcheck)
+            print "Check took %d seconds, target %fC, current %fC, heater %s" % (time.time() - startcheck, setpoint, temp, heater.getstate())
             delay = settings['minduration'] - (time.time() - startcheck)
             if delay > 0:
                 print "Next check in %d seconds" % (delay)
