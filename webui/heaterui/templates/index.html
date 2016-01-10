@@ -1,0 +1,77 @@
+{%- extends "base.html" %}
+
+{# Loads some of the macros included with Flask-Bootstrap. We are using the
+   utils module here to automatically render Flask's flashed messages in a
+   bootstrap friendly manner #}
+{% import "bootstrap/utils.html" as utils %}
+
+{% block scripts %}
+{{super()}}
+<script>
+function outputUpdate(setpoint) {
+    setpoint = Math.round(setpoint * 2) / 2
+    document.querySelector('#selected-setpoint').value = setpoint;
+}
+</script>
+{%- endblock scripts %}
+
+{# Most of the content goes in this block #}
+{% block content %}
+  <div class="container">
+  {%- with messages = get_flashed_messages(with_categories=True) %}
+  {%- if messages %}
+    <div class="row">
+      <div class="col-md-12">
+        {{utils.flashed_messages(messages)}}
+      </div>
+    </div>
+  {%- endif %}
+  {%- endwith %}
+    <div class="jumbotron">
+      <h1>Heater</h1>
+      <h2>Status</h2>
+      <p>Current Temperature: {{ tempC }}</p>
+      <p>Heater Status: {{ state.heater }}</p>
+      <h2>Control</h2>
+      <form method="POST" action="{{ url_for('.index') }}" role="form">
+      <p>
+	   Heater
+	   <!-- {{ form.run() }} -->
+           <div class="btn-group" data-toggle="buttons">
+              <label class="btn btn-primary {%- if settings.run == "off" %} active {%- endif %}">
+		      <input id="run-0" type="radio" name="run" value="off" autocomplete="off" {%- if settings.run == "off" %} checked {%- endif %}>Off
+              </label>
+	      <label class="btn btn-primary {%- if settings.run == "cont" %} active {%- endif %}">
+		      <input id="run-1" type="radio" name="run" value="cont" autocomplete="off" {%- if settings.run == "cont" %} checked {%- endif %}>Continuous
+             </label>
+	     <label class="btn btn-primary {%- if settings.run == "auto" %} active {%- endif %}">
+		      <input id="run-2" type="radio" name="run" value="auto" autocomplete="off" {%- if settings.run == "auto" %} checked {%- endif %}>Auto
+             </label>
+           </div>
+      </p>
+      <p>
+               Setpoint:
+              {{ form.setpoint(min=0, max=30, oninput="outputUpdate(value)", autocomplete="off") }}
+              <output for="setpoint" id="selected-setpoint">{{ form.setpoint.data }}</output>
+          </p>
+      <p>
+           Heat
+	   <!-- {{ form.elements() }} -->
+           <div class="btn-group" data-toggle="buttons">
+              <label class="btn btn-primary {%- if settings.elements == "low" %} active {%- endif %}">
+		      <input id="elements-0" type="radio" name="elements" value="low" autocomplete="off" {%- if settings.elements == "low" %} checked {%- endif %}>Low
+              </label>
+	      <label class="btn btn-primary {%- if settings.elements == "high" %} active {%- endif %}">
+		      <input id="elements-1" type="radio" name="elements" value="high" autocomplete="off" {%- if settings.elements == "high" %} checked {%- endif %}>High
+             </label>
+	     <label class="btn btn-primary {%- if settings.elements == "auto" %} active {%- endif %}">
+		      <input id="elements-2" type="radio" name="elements" value="auto" autocomplete="off" {%- if settings.elements == "auto" %} checked {%- endif %}>Auto
+             </label>
+           </div>
+      </p>
+      <p>
+	      <button type="submit" class="btn btn-default">Save Settings</button>
+      </p>
+      </form>
+    </div>
+{%- endblock %}
