@@ -8,10 +8,9 @@
 {% block scripts %}
 {{super()}}
 <script>
-function outputUpdate(setpoint) {
-    setpoint = Math.round(setpoint * 2) / 2
-    document.querySelector('#selected-setpoint').value = setpoint;
-}
+$("#setpoint").slider({
+    tooltip: 'always'
+});
 </script>
 {%- endblock scripts %}
 
@@ -32,6 +31,7 @@ function outputUpdate(setpoint) {
       <h2>Status</h2>
       <p>Current Temperature: {{ tempC }}</p>
       <p>Heater Status: {{ state.heater }}</p>
+      <button type="button" class="btn btn-success" onclick="location.reload(true)">Reload</button>
       <h2>Control</h2>
       <form method="POST" action="{{ url_for('.index') }}" role="form">
       <p>
@@ -41,30 +41,29 @@ function outputUpdate(setpoint) {
               <label class="btn btn-primary {%- if settings.run == "off" %} active {%- endif %}">
 		      <input id="run-0" type="radio" name="run" value="off" autocomplete="off" {%- if settings.run == "off" %} checked {%- endif %}>Off
               </label>
-	      <label class="btn btn-primary {%- if settings.run == "cont" %} active {%- endif %}">
+	      <label class="btn btn-danger {%- if settings.run == "cont" %} active {%- endif %}">
 		      <input id="run-1" type="radio" name="run" value="cont" autocomplete="off" {%- if settings.run == "cont" %} checked {%- endif %}>Continuous
              </label>
-	     <label class="btn btn-primary {%- if settings.run == "auto" %} active {%- endif %}">
+	     <label class="btn btn-success {%- if settings.run == "auto" %} active {%- endif %}">
 		      <input id="run-2" type="radio" name="run" value="auto" autocomplete="off" {%- if settings.run == "auto" %} checked {%- endif %}>Auto
              </label>
            </div>
       </p>
       <p>
-               Setpoint:
-              {{ form.setpoint(min=0, max=30, oninput="outputUpdate(value)", autocomplete="off") }}
-              <output for="setpoint" id="selected-setpoint">{{ form.setpoint.data }}</output>
+              Setpoint (&deg;C):&nbsp;
+	      <input id="setpoint" name="setpoint" data-slider-id='setpointSlider' type="text" data-slider-min="0" data-slider-max="30" data-slider-step="0.5" data-slider-value="{{ settings.setpoint }}" />
           </p>
       <p>
            Heat
 	   <!-- {{ form.elements() }} -->
            <div class="btn-group" data-toggle="buttons">
-              <label class="btn btn-primary {%- if settings.elements == "low" %} active {%- endif %}">
+              <label class="btn btn-warning {%- if settings.elements == "low" %} active {%- endif %}">
 		      <input id="elements-0" type="radio" name="elements" value="low" autocomplete="off" {%- if settings.elements == "low" %} checked {%- endif %}>Low
               </label>
-	      <label class="btn btn-primary {%- if settings.elements == "high" %} active {%- endif %}">
+	      <label class="btn btn-danger {%- if settings.elements == "high" %} active {%- endif %}">
 		      <input id="elements-1" type="radio" name="elements" value="high" autocomplete="off" {%- if settings.elements == "high" %} checked {%- endif %}>High
              </label>
-	     <label class="btn btn-primary {%- if settings.elements == "auto" %} active {%- endif %}">
+	     <label class="btn btn-success {%- if settings.elements == "auto" %} active {%- endif %}">
 		      <input id="elements-2" type="radio" name="elements" value="auto" autocomplete="off" {%- if settings.elements == "auto" %} checked {%- endif %}>Auto
              </label>
            </div>

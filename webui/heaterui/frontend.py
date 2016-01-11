@@ -7,7 +7,7 @@ from flask_bootstrap import __version__ as FLASK_BOOTSTRAP_VERSION
 from flask_nav.elements import Navbar, View, Subgroup, Link, Text, Separator
 from markupsafe import escape
 from wtforms import Form
-from wtforms.fields import RadioField
+from wtforms.fields import RadioField, DecimalField
 from wtforms.fields.html5 import DecimalRangeField
 
 
@@ -72,7 +72,8 @@ class HeaterForm(Form):
     state = getheaterstate()
     settings = getheatersettings()
     run = RadioField(u'Heater', choices=[('off', 'Off'), ('cont', 'Continuous'), ('auto', 'Automatic')])
-    setpoint = DecimalRangeField('Setpoint', default=settings['setpoint'])
+    # setpoint = DecimalRangeField('Setpoint', default=settings['setpoint'])
+    setpoint = DecimalField('Setpoint', default=settings['setpoint'])
     elements = RadioField(u'Heat', choices=[('low', 'Low'), ('high', 'High'), ('auto', 'Automatic')])
 
 
@@ -90,6 +91,11 @@ def index():
         settings['setpoint'] = setpoint
         settings['elements'] = request.form.get('elements')
         saveheatersettings(settings)
+
+    if settings['run'] == "cont":
+        flash(u'Heater is in continuous mode and will not turn off automatically', 'error')
+    elif settings['run'] == "off":
+        flash(u'Heater is turned off', 'warning')
 
     return render_template('index.html', tempC=tempC, state=state, settings=settings, form=form)
 

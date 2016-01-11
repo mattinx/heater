@@ -24,9 +24,15 @@
     {{super()}}  {# do not forget to call super or Bootstrap's own stylesheets
                     will disappear! #}
     <link href="{{bootstrap_find_resource('css/bootstrap-theme.css', cdn='bootstrap')}}" rel="stylesheet">
+    <link href="{{url_for('static', filename='bootstrap-slider.min.css')}}" rel="stylesheet">
     <link rel="stylesheet" type="text/css"
           href="{{url_for('static', filename='heatercontrol.css')}}">
 {% endblock %}
+
+{% block scripts %}
+    {{super()}}
+    <script src="{{url_for('static', filename='bootstrap-slider.min.js')}}"></script>
+{%- endblock scripts %}
 
 {# Add the navbar #}
 {% block navbar %}
