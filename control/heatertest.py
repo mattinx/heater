@@ -18,20 +18,20 @@ import w1therm
 settings = dict()
 
 # Default setpoint (in C) in event nothing exists in the control file
-settings['setpoint'] = 20.0
+settings['setpoint'] = 25.0
 
 # Minimum duration between heater on/off cycle (seconds)
 settings['minduration'] = 15
 
 # Temperature hysteresis value - temp will be kept at +/- this
-settings['temphyst'] = 0.33
+settings['temphyst'] = 0.5
 
 # Switch from high to low when temperature is within this value of setpoint
-settings['highlowthresh'] = 0.75
+settings['highlowthresh'] = 1.5
 
 # Startup state for heater: automantic, continuous (to TEMP_MAX), or off
 # Valid settings: auto, cont, off
-settings['run'] = 'off'
+settings['run'] = 'auto'
 
 # Use heater on automatic high/low, high only, or low only
 # Valid settings: auto, high, low
@@ -315,7 +315,7 @@ def main():
     heater = Heater(GPIO_LOW, GPIO_HIGH)
 
     print "Target temperature: %fC" % settings['setpoint']
-    temp = getmediantemp(sensors, 9)
+    temp = getmediantemp(sensors, 3)
     print "Current temperature: %fC" % temp
     if temp is None:
         temp = -999
@@ -325,57 +325,22 @@ def main():
         print "Starting main loop"
         while True:
             startcheck = time.time()
-
-            updatesettings()
-
-            if settings['run'] == "off":
-                if heater.is_on():
-                    heater.off()
-                temp = getmediantemp(sensors, 1)
-                writestate(heater, temp)
-                time.sleep(1)
+            h = str(raw_input("Heater high/low/off/quit: "))
+            if h is None or h == "":
                 continue
-
-            temp = getmediantemp(sensors, 9)
-            if temp is None:
+            if h.lower()[0] == "h":
+                heater.high()
+            elif h.lower()[0] == "l":
+                heater.low()
+            elif h.lower()[0] == "q":
                 heater.off()
+                sys.exit(0)
             else:
-                if settings['run'] == "auto":
-                    temphyst = settings['temphyst']
-                    setpoint = settings['setpoint']
-                elif settings['run'] == "cont":
-                    temphyst = 1
-                    setpoint = TEMP_MAX - temphyst
-                else:
-                    # This shouldn't be reached during normal operation
-                    time.sleep(1)
-                    continue
-
-                if (temp < (setpoint - temphyst)):
-                    if (settings['elements'] == 'high') or (
-                            (settings['elements'] == "auto") and (
-                                (setpoint - temp) > settings['highlowthresh']
-                                )):
-                        if heater.getstate() != "high":
-                            heater.high()
-                    else:
-                        if heater.getstate() != "low":
-                            heater.low()
-                elif (temp > (setpoint + temphyst)) and heater.is_on():
-                    heater.off()
-
-            writestate(heater, temp)
-
-            print "Check took %d seconds, target %fC, current %fC, heater %s" % (time.time() - startcheck, setpoint, temp, heater.getstate())
-            delay = settings['minduration'] - (time.time() - startcheck)
-            if delay > 0:
-                print "Next check in %d seconds" % (delay)
-                time.sleep(delay)
+                heater.off()
     except:
         raise
     finally:
         heater.off()
-        writestate(heater, temp)
 
 if __name__ == "__main__":
     main()
