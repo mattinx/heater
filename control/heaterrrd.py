@@ -19,17 +19,16 @@ RRDPATH = "heater.rrd"
 def setup():
     """Setup files"""
     if not os.access(RRDPATH, os.F_OK):
+        print "Creating RRD"
         rrdtool.create(RRDPATH,
-                       '--step', '60',
-                       '--no-overwrite',
+                       '--step', '1m',
                        'DS:temp:GAUGE:300:0:35',
                        'DS:setpoint:GAUGE:300:0:35',
                        'DS:heat:GAUGE:300:0:2',
-                       'RRA:AVERAGE:0.5:1m:1d',
-                       'RRA:AVERAGE:0.5:15m:1w',
-                       'RRA:AVERAGE:0.5:1h:1M',
-                       'RRA:AVERAGE:0.5:1d:1y')
-
+                       'RRA:AVERAGE:0.5:1:1440',
+                       'RRA:AVERAGE:0.5:15:672',
+                       'RRA:AVERAGE:0.5:60:744',
+                       'RRA:AVERAGE:0.5:1440:365')
 
 def main():
     """Collect data and store in rrd"""
@@ -45,7 +44,8 @@ def main():
         heat = 1
     else:
         heat = 0
-    rrddata = "N:%f:%f:%d" % (temp, setpoint, heat)
+    rrddata = "N:%s:%s:%s" % (str(temp), str(setpoint), str(heat))
+    print rrddata
     rrdtool.update(RRDPATH, rrddata)
 
 

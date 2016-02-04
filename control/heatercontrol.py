@@ -21,7 +21,7 @@ settings = dict()
 settings['setpoint'] = 20.0
 
 # Minimum duration between heater on/off cycle (seconds)
-settings['minduration'] = 15
+settings['minduration'] = 30
 
 # Temperature hysteresis value - temp will be kept at +/- this
 settings['temphyst'] = 0.33
