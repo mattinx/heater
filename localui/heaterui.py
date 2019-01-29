@@ -3,7 +3,7 @@
 # pylint: disable=line-too-long
 
 import json
-import wiringpi2
+import wiringpi
 
 ###
 # System configuration
@@ -35,13 +35,13 @@ CONTROL_PERMS = 0666
 
 def setup():
     """Configure hardware"""
-    wiringpi2.wiringPiSetup()
-    wiringpi2.pinMode(GPIO_BTN_ON, 0)  # Set as input
-    wiringpi2.pullUpDnControl(GPIO_BTN_ON, 2)  # Pull-up
-    wiringpi2.pinMode(GPIO_BTN_OFF, 0)
-    wiringpi2.pullUpDnControl(GPIO_BTN_OFF, 2)
-    wiringpi2.pinMode(GPIO_LED_ONOFF, 1)  # Set as output
-    wiringpi2.digitalWrite(GPIO_LED_ONOFF, 0)
+    wiringpi.wiringPiSetup()
+    wiringpi.pinMode(GPIO_BTN_ON, 0)  # Set as input
+    wiringpi.pullUpDnControl(GPIO_BTN_ON, 2)  # Pull-up
+    wiringpi.pinMode(GPIO_BTN_OFF, 0)
+    wiringpi.pullUpDnControl(GPIO_BTN_OFF, 2)
+    wiringpi.pinMode(GPIO_LED_ONOFF, 1)  # Set as output
+    wiringpi.digitalWrite(GPIO_LED_ONOFF, 0)
 
 
 def getheatersettings():
@@ -104,8 +104,8 @@ def main():
     while True:
         state = getheaterstate()
         settings = getheatersettings()
-        btn['on'] = wiringpi2.digitalRead(GPIO_BTN_ON)
-        btn['off'] = wiringpi2.digitalRead(GPIO_BTN_OFF)
+        btn['on'] = wiringpi.digitalRead(GPIO_BTN_ON)
+        btn['off'] = wiringpi.digitalRead(GPIO_BTN_OFF)
         if btn['off'] == 0:
             print "Turn off..."
             settings['run'] = "off"
@@ -116,22 +116,22 @@ def main():
             saveheatersettings(settings)
         if settings['run'] == state['run']:
             if settings['run'] == "off":
-                wiringpi2.digitalWrite(GPIO_LED_ONOFF, 0)
+                wiringpi.digitalWrite(GPIO_LED_ONOFF, 0)
             else:
-                wiringpi2.digitalWrite(GPIO_LED_ONOFF, 1)
+                wiringpi.digitalWrite(GPIO_LED_ONOFF, 1)
         else:
             if settings['run'] == "off":
                 if count < 4:
-                    wiringpi2.digitalWrite(GPIO_LED_ONOFF, 1)
+                    wiringpi.digitalWrite(GPIO_LED_ONOFF, 1)
                 else:
-                    wiringpi2.digitalWrite(GPIO_LED_ONOFF, 0)
+                    wiringpi.digitalWrite(GPIO_LED_ONOFF, 0)
             else:
                 if count < 12:
-                    wiringpi2.digitalWrite(GPIO_LED_ONOFF, 1)
+                    wiringpi.digitalWrite(GPIO_LED_ONOFF, 1)
                 else:
-                    wiringpi2.digitalWrite(GPIO_LED_ONOFF, 0)
+                    wiringpi.digitalWrite(GPIO_LED_ONOFF, 0)
         count = (count + 1) % 20
-        wiringpi2.delay(50)
+        wiringpi.delay(50)
 
 if __name__ == "__main__":
     main()

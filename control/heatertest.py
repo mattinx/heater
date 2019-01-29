@@ -7,7 +7,7 @@ import json
 import os
 import sys
 import time
-import wiringpi2
+import wiringpi
 
 import w1therm
 
@@ -83,8 +83,8 @@ class Heater(object):
     def __init__(self, lowpin, highpin):
         self.__lowpin = lowpin
         self.__highpin = highpin
-        wiringpi2.pinMode(lowpin, 1)
-        wiringpi2.pinMode(highpin, 1)
+        wiringpi.pinMode(lowpin, 1)
+        wiringpi.pinMode(highpin, 1)
         self.__state = 'undefined'
         self.setstate('off')
 
@@ -97,16 +97,16 @@ class Heater(object):
         s = str(state).lower()
         print "Set heater: %s" % s
         if s == "0" or s == "off":
-            wiringpi2.digitalWrite(self.__highpin, 0)
-            wiringpi2.digitalWrite(self.__lowpin, 0)
+            wiringpi.digitalWrite(self.__highpin, 0)
+            wiringpi.digitalWrite(self.__lowpin, 0)
             self.__state = 'off'
         elif s == "1" or s == "lo" or s == "low":
-            wiringpi2.digitalWrite(self.__highpin, 0)
-            wiringpi2.digitalWrite(self.__lowpin, 1)
+            wiringpi.digitalWrite(self.__highpin, 0)
+            wiringpi.digitalWrite(self.__lowpin, 1)
             self.__state = 'low'
         elif s == "2" or s == "hi" or s == "high" or s == "on":
-            wiringpi2.digitalWrite(self.__highpin, 1)
-            wiringpi2.digitalWrite(self.__lowpin, 1)
+            wiringpi.digitalWrite(self.__highpin, 1)
+            wiringpi.digitalWrite(self.__lowpin, 1)
             self.__state = 'high'
         return
 
@@ -271,7 +271,7 @@ def updatesettings():
 
 def setup():
     """Configure hardware"""
-    wiringpi2.wiringPiSetup()
+    wiringpi.wiringPiSetup()
     try:
         if not os.access(CONTROL_FILE, os.F_OK):
             fd = open(CONTROL_FILE, "w")

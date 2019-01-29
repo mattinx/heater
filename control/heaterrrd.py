@@ -13,7 +13,7 @@ import rrdtool
 HEATER_STATUS = "/dev/shm/heater-status"
 
 # Path to rrd
-RRDPATH = "heater.rrd"
+RRDPATH = "/dev/shm/heater.rrd"
 
 
 def setup():
