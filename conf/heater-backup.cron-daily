@@ -1,0 +1,2 @@
+0 0 * * * cp /dev/shm/heater-control /dev/shm/heater.rrd /dev/shm/past-1d.png /dev/shm/past-1h.png /dev/shm/past-1w.png /dev/shm/past-1y.png /dev/shm/past-30d.png /dev/shm/past-3h.png /var/lib/heater/
+

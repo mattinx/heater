@@ -1,0 +1,5 @@
+cp -a /var/lib/heater/* /dev/shm/
+nohup /home/heater/heater/control/heatercontrol.py >/dev/null 2>/dev/null &
+nohup /home/heater/heater/localui/heaterui.py >/dev/null 2>/dev/null &
+nohup /home/heater/heater/webui/run-heaterui.sh >/dev/null 2>/dev/null &
+
